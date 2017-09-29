@@ -9,6 +9,7 @@ import android.os.Build;
 import android.os.Bundle;
 import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AppCompatActivity;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.FrameLayout;
@@ -19,6 +20,7 @@ import android.widget.Toast;
 
 import com.google.android.gms.common.GooglePlayServicesNotAvailableException;
 import com.google.android.gms.common.GooglePlayServicesRepairableException;
+import com.google.android.gms.common.api.Status;
 import com.google.android.gms.location.places.Place;
 import com.google.android.gms.location.places.ui.PlaceAutocomplete;
 import com.google.android.gms.maps.CameraUpdateFactory;
@@ -42,8 +44,7 @@ import butterknife.OnClick;
 import id.co.imastudio1.sinaumaps.helper.DirectionMapsV2;
 import id.co.imastudio1.sinaumaps.helper.GPStrack;
 import id.co.imastudio1.sinaumaps.helper.HeroHelper;
-import id.co.imastudio1.sinaumaps.model.Keempat;
-import id.co.imastudio1.sinaumaps.model.ResponseRoute;
+import id.co.imastudio1.sinaumaps.model.PlaceModel;
 import id.co.imastudio1.sinaumaps.restApi.ApiService;
 import id.co.imastudio1.sinaumaps.restApi.RetrofitConfig;
 import retrofit2.Call;
@@ -97,10 +98,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
                 .findFragmentById(R.id.map);
         mapFragment.getMapAsync(this);
-
     }
-
-
 
     @Override
     public void onMapReady(GoogleMap googleMap) {
@@ -110,11 +108,11 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         gps = new GPStrack(MainActivity.this);
         direction = new DirectionMapsV2(this);
 
-        //
+        //dapat lokasi
         if (gps.canGetLocation()) {
             lat = gps.getLatitude();
             lon = gps.getLongitude();
-            addMarker(lat, lon);
+            addMarker(lat, lon, "Lokasi saya", name_location);
         } else {
             gps.showSettingGps();
         }
@@ -162,22 +160,17 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                 mMap.addMarker(new MarkerOptions().position(posisiku));
                 //convert nama lokasi, ketika marker di klik
                 name_location = convertName(lat,lon);
-                mMap.addMarker(new MarkerOptions().position(posisiku).title(name_location));
+//                mMap.addMarker(new MarkerOptions().position(posisiku).title(name_location));
+                addMarker(lat, lon, "Lokasi yang dipilih", name_location);
             }
         });
     }
 
 
-
     //buat method add marker
-    private void addMarker(Double lat, Double lon) {
-        posisiku = new LatLng(lat,lon);
-        name_location = convertName(lat,lon);
-
-        mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(posisiku,17));
-        mMap.addMarker(new MarkerOptions().position(posisiku).title(name_location));
-
-
+    private void addMarker(Double lat, Double lon, String judul, String alamat) {
+        mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(lat, lon),17));
+        mMap.addMarker(new MarkerOptions().position(new LatLng(lat, lon)).title(judul).snippet(alamat));
     }
 
     private String convertName(Double lat, Double lon) {
@@ -189,7 +182,6 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         } catch (IOException e) {
             e.printStackTrace();
         }
-
         return name_location;
 
     }
@@ -265,12 +257,9 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                 mMap.clear();
                 name_location=convertName(lat,lon);
                 Toast.makeText(MainActivity.this, "lat"+lat +"\nlon "+lon, Toast.LENGTH_SHORT).show();
-                posisiku = new LatLng(lat,lon);
 
                 //add marker
-                mMap.addMarker(new MarkerOptions().position(posisiku).title(name_location));
-
-                mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(posisiku,16));
+                addMarker(lat, lon, "Lokasi saya", name_location);
 
 
             }else {
@@ -293,10 +282,10 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             Double lat = place.getLatLng().latitude;
             Double lon = place.getLatLng().longitude;
             Log.d("Cari", "onActivityResult: "+lat+lon);
-//            String name = place.getName().toString();
-//            edtawal.setText(name);
-//            mMap.clear();
-//            addMarker(lat,lon);
+            String name = place.getName().toString();
+            edtawal.setText(name);
+            mMap.clear();
+            addMarker(lat,lon, "Lokasi yang dipilih", name_location);
 
         } else if (resultCode == PlaceAutocomplete.RESULT_ERROR){
             Status status = PlaceAutocomplete.getStatus(this, data);
@@ -312,37 +301,43 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             String name = place.getName().toString();
             edtakhir.setText(name);
             mMap.clear();
-            addMarker(lat,lon);
+            addMarker(lat,lon, "Lokasi yang dipilih", name_location);
             aksesrute();
         }
     }
 
     public void aksesrute() {
         ApiService api = RetrofitConfig.getInstanceRetrofit();
-        Call<ResponseRoute> call = api.request_route(edtawal.getText().toString(),
+        Call<PlaceModel> call = api.request_route(edtawal.getText().toString(),
                 edtakhir.getText().toString());
 
         //call back atau respon dari json
-        call.enqueue(new Callback<ResponseRoute>() {
+        call.enqueue(new Callback<PlaceModel>() {
             @Override
-            public void onResponse(Call<ResponseRoute> call, Response<ResponseRoute> response) {
+            public void onResponse(Call<PlaceModel> call, Response<PlaceModel> response) {
 
                 HeroHelper.pre("response route " +response.message());
                 if (response.isSuccessful()){
-                    ArrayList<ResponseRoute.Kedua> route = response.body().getRoutes();
-                    ResponseRoute.Kedua.Ketiga overview = route.get(0).getOverview_polyline();
-                    ArrayList<Keempat> legs = route.get(0).getLegs();
-                    Keempat.Distances distances = legs.get(0).getDistance();
 
+                    //route
+                    ///legs[]
+                    ////distance
+                    ////duration
+                    ///overview
+                    ArrayList<PlaceModel.RouteClass> route = response.body().getRoutes();
+                    PlaceModel.RouteClass.PolylineClass overview = route.get(0).getOverview_polyline();
+                    ArrayList<PlaceModel.RouteClass.LegClass> legs = route.get(0).getLegs();
+                    PlaceModel.RouteClass.LegClass.DistanceClass distances = legs.get(0).getDistance();
+                    PlaceModel.RouteClass.LegClass.DurationClass durations = legs.get(0).getDuration();
+
+                    //jarak
                     String jarak = distances.getText();
-
-                    Double value = distances.getValue();
                     textjarak.setText(jarak);
-                    Keempat.Durations durations = legs.get(0).getDuration();
+                    //waktu
                     String waktu = durations.getText();
                     textwaktu.setText(waktu);
-
-                    //untuk harga
+                    //harga
+                    Double value = distances.getValue();
                     double harga = Math.ceil(value/1000);
                     double total = harga * 1000;
                     textharga.setText("Rp."+ HeroHelper.
@@ -354,7 +349,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             }
 
             @Override
-            public void onFailure(Call<ResponseRoute> call, Throwable t) {
+            public void onFailure(Call<PlaceModel> call, Throwable t) {
                 HeroHelper.pre(" error route"+t.getMessage());
             }
         });
