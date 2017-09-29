@@ -17,6 +17,10 @@ import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.google.android.gms.common.GooglePlayServicesNotAvailableException;
+import com.google.android.gms.common.GooglePlayServicesRepairableException;
+import com.google.android.gms.location.places.Place;
+import com.google.android.gms.location.places.ui.PlaceAutocomplete;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
@@ -202,29 +206,29 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             case R.id.btnpanorama:
                 aksespanorama();
                 break;
-//            case R.id.edtawal:
-//                try{
-//                    intent = new PlaceAutocomplete.IntentBuilder(PlaceAutocomplete.MODE_OVERLAY).build(MainActivity.this);
-//                } catch (GooglePlayServicesRepairableException e) {
-//                    e.printStackTrace();
-//                } catch (GooglePlayServicesNotAvailableException e) {
-//                    e.printStackTrace();
-//                }
-//                //
-//                startActivityForResult(intent,1);
-//                break;
-//            case R.id.edtakhir:
-//                try{
-//                    intent = new PlaceAutocomplete.IntentBuilder(PlaceAutocomplete.MODE_OVERLAY).build(MainActivity.this);
-//                } catch (GooglePlayServicesRepairableException e) {
-//                    e.printStackTrace();
-//                } catch (GooglePlayServicesNotAvailableException e) {
-//                    e.printStackTrace();
-//                }
-//                //
-//                startActivityForResult(intent,2);
-//
-//                break;
+            case R.id.edtawal:
+                try{
+                    intent = new PlaceAutocomplete.IntentBuilder(PlaceAutocomplete.MODE_OVERLAY).build(MainActivity.this);
+                } catch (GooglePlayServicesRepairableException e) {
+                    e.printStackTrace();
+                } catch (GooglePlayServicesNotAvailableException e) {
+                    e.printStackTrace();
+                }
+                //
+                startActivityForResult(intent,1);
+                break;
+            case R.id.edtakhir:
+                try{
+                    intent = new PlaceAutocomplete.IntentBuilder(PlaceAutocomplete.MODE_OVERLAY).build(MainActivity.this);
+                } catch (GooglePlayServicesRepairableException e) {
+                    e.printStackTrace();
+                } catch (GooglePlayServicesNotAvailableException e) {
+                    e.printStackTrace();
+                }
+                //
+                startActivityForResult(intent,2);
+
+                break;
         }
     }
 
@@ -281,36 +285,36 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
-//        if (requestCode==1 && resultCode != 0){
-//            Place place = PlaceAutocomplete.getPlace(this,data);
-//            //get koordinat lat long
-//
-//            LatLng latLng = place.getLatLng();
-//            Double lat = place.getLatLng().latitude;
-//            Double lon = place.getLatLng().longitude;
-//            Log.d("Cari", "onActivityResult: "+lat+lon);
-////            String name = place.getName().toString();
-////            edtawal.setText(name);
-////            mMap.clear();
-////            addMarker(lat,lon);
-//
-//        } else if (resultCode == PlaceAutocomplete.RESULT_ERROR){
-//            Status status = PlaceAutocomplete.getStatus(this, data);
-//            // TODO: Handle the error.
-//            Log.i("Status", status.getStatusMessage());
-//        } else {
-//            Place place = PlaceAutocomplete.getPlace(this,data);
-//            //get koordinat lat long
-//
-//            LatLng latLng = place.getLatLng();
-//            Double lat = place.getLatLng().latitude;
-//            Double lon = place.getLatLng().longitude;
+        if (requestCode==1 && resultCode != 0){
+            Place place = PlaceAutocomplete.getPlace(this,data);
+            //get koordinat lat long
+
+            LatLng latLng = place.getLatLng();
+            Double lat = place.getLatLng().latitude;
+            Double lon = place.getLatLng().longitude;
+            Log.d("Cari", "onActivityResult: "+lat+lon);
 //            String name = place.getName().toString();
-//            edtakhir.setText(name);
+//            edtawal.setText(name);
 //            mMap.clear();
 //            addMarker(lat,lon);
-//            aksesrute();
-//        }
+
+        } else if (resultCode == PlaceAutocomplete.RESULT_ERROR){
+            Status status = PlaceAutocomplete.getStatus(this, data);
+            // TODO: Handle the error.
+            Log.i("Status", status.getStatusMessage());
+        } else {
+            Place place = PlaceAutocomplete.getPlace(this,data);
+            //get koordinat lat long
+
+            LatLng latLng = place.getLatLng();
+            Double lat = place.getLatLng().latitude;
+            Double lon = place.getLatLng().longitude;
+            String name = place.getName().toString();
+            edtakhir.setText(name);
+            mMap.clear();
+            addMarker(lat,lon);
+            aksesrute();
+        }
     }
 
     public void aksesrute() {
